@@ -1,0 +1,75 @@
+<html>
+<head>
+    <link href="css/app.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="wrapper">
+        <div class="listview">
+            <div class="lv-header">
+                Awesome chat app
+            </div>
+            <div id="messages" class="lv-messages">
+            </div>
+            <div class="lv-footer">
+                <form onsubmit="sendMessage(); return false">
+                    <input type="text" id="text" />
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="application/javascript">
+
+        /*
+         For compatibility with angular ng-websocket demo, we consider following message structure :
+
+         var message = {
+            event: 'message',
+            data: {
+                text: 'text of message'
+            }
+         }
+
+         */
+
+        var webSocket = new WebSocket("ws://localhost:8080/chat");
+        webSocket.onopen = function(event) {
+            addMessage("Welcome to chat", false)
+        };
+        webSocket.onmessage = function (event) {
+
+            // extract data from websocket event
+            var message = JSON.parse(event.data);
+
+            // extract text of our message (depending on our own structure of message)
+            var text = message.data.text;
+            addMessage(text, false)
+        };
+
+        function sendMessage() {
+
+            // we are creating a message with our own structure (see before)
+            var message = {
+                'event': 'message',
+                'data': {
+                    'text': document.getElementById('text').value
+                }
+            };
+            // and sending it as text message
+            webSocket.send(JSON.stringify(message));
+            addMessage(message.data.text, true);
+            document.getElementById('text').value = '';
+        }
+
+        function addMessage(text, me) {
+            var html = '<div class="lv-body' + (me ? ' lv-right':'') + '">';
+            html += '<div class="lv-message' + (me ? ' lv-me':'') + '">';
+            html += text + '</div></div>';
+            document.getElementById('messages').innerHTML += html;
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        }
+    </script>
+
+</body>
+</html>

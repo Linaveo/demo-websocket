@@ -1,0 +1,64 @@
+<html data-ng-app="chatApp">
+<head>
+    <link href="css/app.css" rel="stylesheet"/>
+    <script src="lib/angular.js"></script>
+</head>
+<body data-ng-controller="chatController">
+    <div class="wrapper">
+        <div class="listview">
+            <div class="lv-header">
+                Awesome chat app
+            </div>
+            <div id="messages" class="lv-messages">
+                <div class="lv-body" data-ng-class="{'lv-right': message.me}" data-ng-repeat="message in messages"  data-ng-cloak>
+                    <div class="lv-message" data-ng-class="{'lv-me': message.me}">
+                        {{message.text}}
+                    </div>
+                </div>
+            </div>
+            <div class="lv-footer">
+                <form data-ng-submit="send()">
+                    <input type="text" data-ng-model="text"/>
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib/ng-websocket.js"></script>
+    <script type="application/javascript">
+        var chatApp = angular.module('chatApp', ['ngWebsocket']);
+
+        chatApp.controller('chatController', ['$scope', '$websocket', function ($scope, $websocket) {
+            $scope.messages = [];
+
+            $scope.addMessage = function (text, me) {
+                $scope.messages.push({
+                    'text': text,
+                    'me': me
+                })
+            };
+
+            $scope.send = function () {
+                if ($scope.text) {
+                    $scope.websocket.$emit('message', {
+                        'text': $scope.text
+                    });
+                    $scope.addMessage($scope.text, true);
+                    $scope.text = "";
+                }
+            };
+
+            $scope.websocket = $websocket.$new('ws://localhost:8080/chat');
+            $scope.websocket.$on('message', function (data) {
+                $scope.addMessage(data.text, false);
+                $scope.$apply();
+            });
+            $scope.websocket.$on('$open', function () {
+                $scope.addMessage("Welcome to chat", false);
+                $scope.$apply();
+            });
+        }]);
+    </script>
+</body>
+</html>
